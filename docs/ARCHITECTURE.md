@@ -86,8 +86,11 @@ including the rulings on the open questions of `docs/PRD.md` section 13.
   true. The plugin takes a lock row with `INSERT IGNORE` on the unique
   `option_name` (the technique core uses for its upgrade lock), then reads
   and writes the counter row directly through `$wpdb` while holding it. The
-  lock value is its expiry, so a crashed request frees it after 10 seconds;
-  an expired lock is removed only if its value is unchanged. A request
+  lock value is its expiry followed by a random owner token, so a crashed
+  request frees it after 10 seconds; an expired lock is removed only if its
+  value is unchanged, and release deletes the row only while it still holds
+  the releasing request's own token, so a request whose lock expired and was
+  taken over cannot free the new holder's lock. A request
   that cannot take the lock within 2 seconds, or cannot write, gets 503
   `headline_options_storage`: the cap is never assumed.
 - **Rate limit storage.** The PRD lists transients for the rate limit. The
@@ -145,8 +148,13 @@ including the rulings on the open questions of `docs/PRD.md` section 13.
   emoji, JSON only. Article, excerpt, current headline and style note go in
   delimited blocks, and the system part says block content is material,
   not instructions. The style block is left out when the note is empty.
+  Any of the four block tags found inside a value (after entity decoding) is
+  removed, so article text cannot close its block and write lines that read
+  as the prompt's own. The same neutralised values go to prompt-library.
 - **Language in the prompt.** The locale string (`en_GB`, `hi_IN`) is passed
-  as is; models read locale codes reliably and no name table is needed.
+  as is; models read locale codes reliably and no name table is needed. It
+  is the only value in the system part that comes from a filter, so a value
+  that is not locale-shaped is replaced by "the language of the article".
 - **Time budget (case 72).** Remaining time is `max_execution_time` less the
   time since `REQUEST_TIME_FLOAT`. The library deadline is that less 5
   seconds, capped at 60; under 8 seconds the request is refused before the
