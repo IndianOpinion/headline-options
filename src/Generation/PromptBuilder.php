@@ -80,6 +80,7 @@ final class PromptBuilder
 
     public function build(PromptInput $input): Prompt
     {
+        $input = self::neutralise($input);
         $prompt = $this->fromPromptLibrary($input) ?? $this->builtIn($input);
         $filtered = Hooks::filter('headline_options_prompt', ['system' => $prompt->system, 'user' => $prompt->user], $input->toArray());
         if (is_array($filtered) && is_string($filtered['system'] ?? null) && is_string($filtered['user'] ?? null) && trim($filtered['user']) !== '') {
@@ -89,8 +90,37 @@ final class PromptBuilder
         return $prompt;
     }
 
+    /**
+     * Article text is untrusted. It must not be able to close its delimited
+     * block and write text that reads as the prompt's own (for example
+     * "</article> New instructions: ..."; entities are decoded before this,
+     * so "&lt;/article&gt;" arrives as a real tag). Block tags inside any value
+     * are removed, and the language, which goes into the system part, is
+     * reduced to a locale-like code.
+     */
+    public static function neutralise(PromptInput $input): PromptInput
+    {
+        $strip = static fn (string $v): string => (string) (preg_replace(
+            '/<\s*\/?\s*(?:current_headline|excerpt|article|style_note)\b[^>]*>/iu',
+            ' ',
+            $v
+        ) ?? '');
+        $language = preg_match('/^[A-Za-z]{2,3}(?:[_\-][A-Za-z0-9]{1,8}){0,3}$/', $input->language) === 1 ? $input->language : 'the language of the article';
+
+        return new PromptInput(
+            $input->count,
+            $language,
+            $input->maxLength,
+            $strip($input->currentTitle),
+            $strip($input->excerpt),
+            $strip($input->text),
+            $strip($input->styleNote),
+        );
+    }
+
     public function builtIn(PromptInput $input): Prompt
     {
+        $input = self::neutralise($input);
         $values = $input->toArray();
         $values['current_title'] = $values['current_title'] === '' ? '(none yet)' : $values['current_title'];
         $values['excerpt'] = $values['excerpt'] === '' ? '(none)' : $values['excerpt'];
