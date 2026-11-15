@@ -81,4 +81,13 @@ final class CleanerTest extends TestCase
         self::assertSame('Neue Regeln', $cleaner->clean('Titel: Neue Regeln'));
         self::assertSame('Headline: Neue Regeln', $cleaner->clean('Headline: Neue Regeln'));
     }
+
+    public function testDashAfterALabelNeedsASpaceSoHyphenatedWordsSurvive(): void
+    {
+        $c = new Cleaner();
+        self::assertSame('Option-trading volumes hit a record', $c->clean('Option-trading volumes hit a record'));
+        self::assertSame('Title-holders crash out in round one', $c->clean('Title-holders crash out in round one'));
+        self::assertSame('Repo rate unchanged', $c->clean('Headline - Repo rate unchanged'));
+        self::assertSame('Repo rate unchanged', $c->clean("Option 2 \u{2013} Repo rate unchanged"));
+    }
 }

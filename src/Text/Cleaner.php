@@ -91,7 +91,9 @@ final class Cleaner
             return $text;
         }
         $alternatives = implode('|', array_map(static fn (string $p): string => preg_quote($p, '/'), $this->prefixes));
-        $pattern = '/^(?:' . $alternatives . ')(?:\s*\d{1,2})?\s*[:\x{FF1A}\-\x{2013}]\s*/iu';
+        // A colon may follow the label directly; a dash needs a space before it,
+        // so "Option-trading" or "Title-holders" in a real headline is kept.
+        $pattern = '/^(?:' . $alternatives . ')(?:\s*\d{1,2})?(?:\s*[:\x{FF1A}]|\s+[\-\x{2013}\x{2014}])\s*/iu';
 
         return preg_replace($pattern, '', $text) ?? $text;
     }
