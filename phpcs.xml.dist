@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<ruleset name="headline-options">
+    <description>PSR-12 for the plugin and its tests.</description>
+    <file>src</file>
+    <file>tests</file>
+    <file>examples</file>
+    <file>headline-options.php</file>
+    <file>uninstall.php</file>
+    <file>bootstrap.php</file>
+    <exclude-pattern>tests/stubs/*</exclude-pattern>
+    <exclude-pattern>tests/js/*</exclude-pattern>
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <rule ref="PSR12">
+        <!-- Plugin entry files declare constants and boot; that is their job. -->
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+    </rule>
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="200"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+        <!-- WordPress reads the plugin header one line per field. -->
+        <exclude-pattern>headline-options.php</exclude-pattern>
+    </rule>
+    <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+        <!-- WP-CLI maps reset_usage to the reset-usage subcommand. -->
+        <exclude-pattern>src/WordPress/Cli.php</exclude-pattern>
+    </rule>
+</ruleset>

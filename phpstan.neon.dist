@@ -1,0 +1,13 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - headline-options.php
+        - uninstall.php
+        - bootstrap.php
+    scanFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+    bootstrapFiles:
+        - tests/phpstan-constants.php
+    treatPhpDocTypesAsCertain: false
