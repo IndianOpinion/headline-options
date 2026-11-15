@@ -61,7 +61,16 @@ if (!function_exists('headline_options_score')) {
     function headline_options_generate(int $post_id, array $state, array $args = []): CandidateSet
     {
         $post = PostContext::resolve($post_id);
-        $userId = array_key_exists('user_id', $args) ? $args['user_id'] : (function_exists('get_current_user_id') ? get_current_user_id() : null);
+        if (array_key_exists('user_id', $args)) {
+            $userId = $args['user_id'];
+        } else {
+            $current = function_exists('get_current_user_id') ? get_current_user_id() : 0;
+            $userId = $current > 0 ? $current : null;
+            if ($userId !== null) {
+                // Same checks as the REST route for a signed-in user.
+                PostContext::assertCanUse($post);
+            }
+        }
         $req = new GenerationRequest(
             $post->ID,
             (string) ($state['title'] ?? $post->post_title),

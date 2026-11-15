@@ -514,4 +514,19 @@ final class GenerateTest extends TestCase
         self::assertSame(0, \IndianOpinion\HeadlineOptions\WordPress\Services::instance()->usageStore()->snapshot(7)['site']);
         restore_current_blog();
     }
+
+    public function testPhpGenerateChecksTheSignedInUserLikeTheRoute(): void
+    {
+        $this->configure();
+        WpState::addPost(10, 'Repo rate unchanged', $this->article());
+        WpState::loginEditor(7, []);
+        try {
+            headline_options_generate(10, []);
+            self::fail('generated for a user who cannot edit the post');
+        } catch (\IndianOpinion\HeadlineOptions\Exception\ForbiddenException $e) {
+            self::assertSame(403, $e->httpStatus());
+        }
+        self::assertSame([], $this->transport->requests());
+        self::assertSame(0, $this->usage()['site']);
+    }
 }

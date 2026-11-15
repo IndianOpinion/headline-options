@@ -33,6 +33,11 @@ final class Admin
 
     public function settings(): void
     {
+        // PRD section 6: the key option is not autoloaded. Create it before
+        // register_setting() adds a default, so options.php only updates it.
+        if (get_option(Services::KEY_OPTION, null) === null) {
+            add_option(Services::KEY_OPTION, '', '', false);
+        }
         register_setting(self::GROUP, Services::SETTINGS_OPTION, [
             'type' => 'array',
             'sanitize_callback' => [$this, 'sanitizeSettings'],

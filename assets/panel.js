@@ -49,7 +49,8 @@
 		var _own = useState(''), own = _own[0], setOwn = _own[1];
 		var _ownScore = useState(null), ownScore = _ownScore[0], setOwnScore = _ownScore[1];
 		var _confirm = useState(!!config.confirmUse), confirmOn = _confirm[0], setConfirmOn = _confirm[1];
-		var timer = useRef(null);
+		var titleTimer = useRef(null);
+		var ownTimer = useRef(null);
 
 		useEffect(function () {
 			wp.apiFetch({ path: ns + '/status' }).then(setStatus).catch(function () {});
@@ -75,8 +76,8 @@
 				setCurrentScore(null);
 				return;
 			}
-			clearTimeout(timer.current);
-			timer.current = setTimeout(function () {
+			clearTimeout(titleTimer.current);
+			titleTimer.current = setTimeout(function () {
 				score([title], function (r) { setCurrentScore(r[0]); });
 			}, config.debounceMs || 400);
 		}, [title]);
@@ -111,7 +112,7 @@
 
 		function onOwn(value) {
 			setOwn(value);
-			clearTimeout(timer.current);
+			clearTimeout(ownTimer.current);
 			if (value.length > 1000) {
 				setOwnScore(null);
 				setError(core.MESSAGES.tooLong);
@@ -121,7 +122,7 @@
 				setOwnScore(null);
 				return;
 			}
-			timer.current = setTimeout(function () {
+			ownTimer.current = setTimeout(function () {
 				score([value], function (r) { setOwnScore(r[0]); });
 			}, config.debounceMs || 400);
 		}

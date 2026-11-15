@@ -66,7 +66,9 @@ final class SetStore
      */
     private function write(int $postId, array $sets): bool
     {
-        $result = update_post_meta($postId, self::META_KEY, $sets);
+        // update_post_meta() unslashes its value, so a backslash in a
+        // candidate would be lost without this.
+        $result = update_post_meta($postId, self::META_KEY, function_exists('wp_slash') ? wp_slash($sets) : $sets);
 
         return $result !== false;
     }
