@@ -145,4 +145,19 @@ final class UsageStoreTest extends TestCase
         }
         self::assertSame(5, $s->snapshot(null)['site']);
     }
+
+    public function testReleaseAfterTakeoverLeavesTheNewHoldersLock(): void
+    {
+        $now = $this->clock->now()->getTimestamp();
+        $first = new Mutex($this->table);
+        self::assertTrue($first->acquire('headline_options_lock_5', 10, $now));
+        // The first holder stalls past its expiry; a second request takes the lock over.
+        $second = new Mutex($this->table);
+        self::assertTrue($second->acquire('headline_options_lock_5', 10, $now + 11));
+        $first->release('headline_options_lock_5');
+        self::assertNotNull($this->table->read('headline_options_lock_5'));
+        self::assertFalse((new Mutex($this->table))->acquire('headline_options_lock_5', 10, $now + 12));
+        $second->release('headline_options_lock_5');
+        self::assertNull($this->table->read('headline_options_lock_5'));
+    }
 }
