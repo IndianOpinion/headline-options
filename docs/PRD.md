@@ -293,8 +293,9 @@ Default weights are in section 7.
     Bengali, Tamil, Arabic and the like), the capitalisation part of case
     41 does not apply. The rule then checks only tags, categories, Latin
     tokens inside the headline, and any entity list supplied through the
-    filter `headline_options_known_entities`. When none of these yield an
-    entity, the rule is `na`, never a pass.
+    filter `headline_options_known_entities`, plus the names the model
+    lists in the `entities` key of its output (5.6). When none of these
+    yield an entity, the rule is `na`, never a pass.
 43. **Shouting.** Two or more all-caps words of four or more letters that
     are not known acronyms (from the article text, where they also appear
     in caps) is a warn. More than half the letters in caps is a fail.
@@ -515,9 +516,14 @@ the article does not answer, and emoji; and to return JSON only. The user
 part carries the current headline, the excerpt, the article text and the
 optional style note from settings, each in a clearly delimited block.
 
-Output schema: `{ "candidates": [ { "headline": string, "angle": string } ] }`,
+Output schema: `{ "candidates": [ { "headline": string, "angle": string } ], "entities": [ string ] }`,
 `candidates` with 1 to 10 items, `headline` 1 to 300 characters, `angle`
-0 to 80 characters, no other keys.
+0 to 80 characters; `entities` with 0 to 30 items of up to 80 characters
+each, the names of people, places and organisations the candidates use,
+written as in the article; no other keys. The `entities` key was added by
+ruling 7 (`docs/ARCHITECTURE.md`): each listed name that appears in a
+headline joins the entity candidates of case 42 and must appear in the
+article, so a name the model invents and lists fails.
 
 When `prompt-library` is active, the plugin registers a default template
 `headline-options/generate` through its documented registration function,
@@ -553,8 +559,9 @@ Exit codes: 0 on success, 1 on error, 3 when disabled, 4 when capped.
 | Settings | option `headline_options_settings` (autoload on) | Until uninstall |
 | Provider key (when not a constant) | option `headline_options_key` (autoload off) | Until uninstall |
 | Day counters (site and per user) | option `headline_options_usage` (autoload off), keyed by local day | Previous days dropped on the first write of a new day |
-| Rate limit | transients per user, 60 s | Expire |
-| Generation lock | transient per post | Expires (case 15) |
+| Rate limit | timestamps per user inside `headline_options_usage`, under the same lock row as the counters | Older than 60 s dropped |
+| Counter lock | option row `headline_options_usage_lock` (autoload off), taken with `INSERT IGNORE`, value its expiry and an owner token | 10 s, deleted on release |
+| Generation lock | option row `headline_options_lock_{id}` per post (autoload off), taken with `INSERT IGNORE`, value its expiry and an owner token | Expires (case 15), deleted on release |
 | Last error | option `headline_options_last_error` (autoload off), code and time only, no content | Overwritten |
 | Candidate sets | post meta `_headline_options_sets` (protected, not shown in custom fields, not in REST post responses), list of the last 5 sets | Oldest dropped; deleted with the post |
 | Choices | inside the set: `chosen_index`, `chosen_by`, `chosen_at` | With the set |
@@ -588,8 +595,9 @@ capability.
 | Length warn range | 20 to 90 | wider than pass |
 
 Default weights (points possible): length 25, clickbait 20, numerals
-support 20, entity support 20, shouting 5, punctuation 5, emoji 5,
-numeral presence 5 (bonus counted only when present), script match 10.
+support 20, entity support 20, withheld subject 5, shouting 5,
+punctuation 5, emoji 5, numeral presence 5 (bonus counted only when
+present), script match 10.
 
 Generation is off on install so a site never spends money before an
 administrator has chosen a model and caps.
